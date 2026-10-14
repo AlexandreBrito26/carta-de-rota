@@ -3,6 +3,7 @@ import { flushSync } from "react-dom";
 import InfoDialog, { type InfoTab } from "./components/InfoDialog";
 import Logo from "./components/Logo";
 import Stat from "./components/Stat";
+import ChartBackground from "./components/ChartBackground";
 import ConfirmButton from "./components/ConfirmButton";
 import StageSection from "./components/StageSection";
 import ThemeToggle from "./components/ThemeToggle";
@@ -23,7 +24,7 @@ const FILTERS: { value: Filter; label: string }[] = [
   { value: "done", label: "Concluídos" },
 ];
 
-const VERSION = "1.3";
+const VERSION = "1.4";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -218,6 +219,7 @@ export default function App() {
 
   return (
     <div className="app">
+      <ChartBackground />
       <a className="skip" href="#rota">Pular para a rota</a>
       <header className="app__header">
         <div className="brand">

@@ -9,6 +9,7 @@ interface InfoDialogProps {
 }
 
 const CHANGES = [
+  { version: "1.4", items: ["Fundo animado em canvas, inspirado numa carta náutica.", "A rota se desenha sozinha, com um navio percorrendo o trajeto."] },
   { version: "1.3", items: ["Ajuda e novidades no rodapé, com passos e atalhos.", "Janela de novidades com o histórico de versões."] },
   { version: "1.2", items: ["App instalável e funcionando sem internet.", "Tela de primeiro uso com exemplo.", "Tratamento de erro com saída amigável."] },
   { version: "1.1", items: ["Visual neumórfico nos dois temas.", "Marca nova com agulha animada.", "Troca de tema com transição circular.", "Números animados e brilho que segue o cursor."] },
