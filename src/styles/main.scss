@@ -2,8 +2,10 @@
 $light: (
   bg: #f4efe2,
   bg-2: #e6dcc3,
-  surface: #fffdf7,
-  surface-2: #f7f1e1,
+  surface: #f1ebdc,
+  surface-2: #ebe4d1,
+  nm-light: rgba(255, 255, 255, 0.9),
+  nm-dark: rgba(150, 128, 84, 0.3),
   ink: #0f2d3f,
   ink-soft: #4d6676,
   line: rgba(15, 45, 63, 0.14),
@@ -19,8 +21,10 @@ $light: (
 $dark: (
   bg: #0a1f2e,
   bg-2: #061524,
-  surface: #10324a,
-  surface-2: #0c2b40,
+  surface: #0e2a3d,
+  surface-2: #0b2437,
+  nm-light: rgba(120, 190, 220, 0.08),
+  nm-dark: rgba(2, 10, 18, 0.75),
   ink: #e8f4f8,
   ink-soft: #9fb9c7,
   line: rgba(232, 244, 248, 0.12),
@@ -61,9 +65,9 @@ $ease: cubic-bezier(0.2, 0.7, 0.2, 1);
 
 @mixin surface {
   background: var(--surface);
-  border: 1px solid var(--line);
+  border: 0;
   border-radius: $radius;
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03), 0 8px 24px -16px rgba(0, 0, 0, 0.25);
+  box-shadow: 9px 9px 18px var(--nm-dark), -9px -9px 18px var(--nm-light);
 }
 
 @mixin focus-ring {
@@ -935,5 +939,358 @@ select {
   .timeline__bars {
     grid-template-columns: repeat(7, minmax(0, 1fr));
     row-gap: 8px;
+  }
+}
+
+
+// ——— Neumorfismo e efeitos ———
+
+@property --angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@mixin raised($d: 6px) {
+  box-shadow: $d $d ($d * 2) var(--nm-dark), (-$d) (-$d) ($d * 2) var(--nm-light);
+}
+
+@mixin pressed($d: 3px) {
+  box-shadow: inset $d $d ($d * 2) var(--nm-dark), inset (-$d) (-$d) ($d * 2) var(--nm-light);
+}
+
+.app {
+  position: relative;
+  z-index: 1;
+}
+
+// Painéis e cartões em relevo, com brilho que segue o cursor
+.panel,
+.stage,
+.summary__item,
+.empty,
+.timeline {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), color-mix(in srgb, var(--brass) 14%, transparent), transparent 65%);
+    opacity: 0;
+    transition: opacity 0.35s;
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  &:hover::after {
+    opacity: 1;
+  }
+}
+
+.summary__item {
+  transition: transform 0.25s $ease, box-shadow 0.25s $ease;
+
+  &:hover {
+    transform: translateY(-2px);
+  }
+
+  // Anel luminoso girando no hover
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1.5px;
+    border-radius: inherit;
+    background: conic-gradient(from var(--angle), transparent 0 60%, var(--brass), var(--sea), transparent 90%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+
+  &:hover::before {
+    opacity: 1;
+    animation: spin-ring 3.2s linear infinite;
+  }
+}
+
+@keyframes spin-ring {
+  to {
+    --angle: 360deg;
+  }
+}
+
+// Título com degradê de mar e areia
+h1 {
+  background: linear-gradient(100deg, var(--ink) 0%, var(--sea) 55%, var(--brass) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+// Cabeçalho com a marca
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+
+  p {
+    margin-top: 6px !important;
+  }
+}
+
+.logo {
+  flex-shrink: 0;
+  filter: drop-shadow(0 6px 10px var(--nm-dark));
+
+  &__ring {
+    fill: var(--surface);
+    stroke: var(--brass);
+    stroke-width: 1.5;
+  }
+
+  &__inner {
+    fill: none;
+    stroke: var(--line);
+    stroke-width: 1;
+  }
+
+  &__tick {
+    stroke: var(--brass);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+  }
+
+  &__needle {
+    transform-origin: 24px 24px;
+    animation: sway 6s ease-in-out infinite;
+  }
+
+  &__north {
+    fill: var(--brass);
+  }
+
+  &__south {
+    fill: var(--sea);
+  }
+
+  &__pin {
+    fill: var(--ink);
+  }
+}
+
+@keyframes sway {
+  0%,
+  100% {
+    transform: rotate(-16deg);
+  }
+
+  50% {
+    transform: rotate(20deg);
+  }
+}
+
+// Botões em relevo que afundam ao clicar
+.btn {
+  @include raised(4px);
+  transition: box-shadow 0.2s, transform 0.15s $ease, background 0.2s;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    @include pressed(2px);
+    transform: translateY(1px) scale(0.98);
+  }
+
+  &--primary {
+    overflow: hidden;
+    position: relative;
+
+    &::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -60%;
+      width: 40%;
+      height: 100%;
+      background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+      transform: skewX(-20deg);
+    }
+
+    &:hover::after {
+      animation: shine 0.9s $ease;
+    }
+  }
+}
+
+@keyframes shine {
+  to {
+    left: 130%;
+  }
+}
+
+.theme-toggle {
+  @include raised(4px);
+}
+
+.chip {
+  transition: box-shadow 0.2s, transform 0.15s $ease;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+
+  &[aria-pressed="true"] {
+    box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.3), 0 0 14px -2px var(--sea);
+  }
+}
+
+// Campos afundados
+.field input,
+.field select,
+.add input,
+.add-stage input,
+.data-tools input,
+.card__log input,
+.week__day input,
+.stage__name {
+  @include pressed(3px);
+  border: 0 !important;
+}
+
+.stage__name {
+  box-shadow: none;
+  transition: box-shadow 0.2s;
+
+  &:focus-visible {
+    @include pressed(2px);
+  }
+}
+
+// Cartões de rota em relevo leve, com elevação no hover
+.card {
+  @include raised(4px);
+  border: 0;
+  border-left: 4px solid var(--sea);
+  transition: transform 0.25s $ease, box-shadow 0.25s $ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 8px 8px 16px var(--nm-dark), -8px -8px 16px var(--nm-light);
+  }
+}
+
+// Barras de progresso com brilho deslizante
+.card__bar span,
+.stage__bar span,
+.summary__bar span {
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transform: translateX(-100%);
+    animation: glint 2.8s ease-in-out infinite;
+  }
+}
+
+@keyframes glint {
+  0%,
+  60% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+// Linha do tempo e etapas: entram conforme a rolagem (scroll-driven, com fallback)
+@supports (animation-timeline: view()) {
+  .stage,
+  .timeline {
+    animation: reveal linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 35%;
+  }
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+// Ondas decorativas no rodapé, sempre atrás do conteúdo
+.waves {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 110px;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.9;
+
+  svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  &__back {
+    fill: var(--sea-soft);
+    animation: bob 7s ease-in-out infinite;
+  }
+
+  &__front {
+    fill: color-mix(in srgb, var(--sea) 22%, transparent);
+    animation: bob 5s ease-in-out infinite reverse;
+  }
+}
+
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(-4px);
+  }
+
+  50% {
+    transform: translateY(6px);
+  }
+}
+
+// Transição circular ao trocar o tema
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.55s;
+  animation-timing-function: $ease;
+}
+
+@media (max-width: 560px) {
+  .brand {
+    align-items: flex-start;
+  }
+
+  .logo {
+    width: 38px;
+    height: 38px;
   }
 }

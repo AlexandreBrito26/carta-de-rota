@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
+import Logo from "./components/Logo";
+import Stat from "./components/Stat";
 import ConfirmButton from "./components/ConfirmButton";
 import StageSection from "./components/StageSection";
 import ThemeToggle from "./components/ThemeToggle";
@@ -69,6 +72,30 @@ export default function App() {
   const stats = useMemo(() => computeStats(plan), [plan]);
   const days = useMemo(() => dailyPlan(state.topics, state.weekHours, today, 14), [state.topics, state.weekHours, today]);
   const isEmpty = state.topics.length === 0;
+
+  // Troca de tema com transição circular, quando o navegador suporta
+  function changeTheme(theme: ThemeMode) {
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const doc = document as Document & { startViewTransition?: (cb: () => void) => unknown };
+    if (!doc.startViewTransition || reduce) {
+      patch((s) => ({ ...s, theme }));
+      return;
+    }
+    doc.startViewTransition(() => flushSync(() => patch((s) => ({ ...s, theme }))));
+  }
+
+  // Brilho que segue o cursor dentro dos painéis
+  useEffect(() => {
+    function onMove(e: PointerEvent) {
+      const panel = (e.target as HTMLElement | null)?.closest?.(".panel, .summary__item") as HTMLElement | null;
+      if (!panel) return;
+      const r = panel.getBoundingClientRect();
+      panel.style.setProperty("--mx", `${e.clientX - r.left}px`);
+      panel.style.setProperty("--my", `${e.clientY - r.top}px`);
+    }
+    document.addEventListener("pointermove", onMove);
+    return () => document.removeEventListener("pointermove", onMove);
+  }, []);
 
   function patch(fn: (s: AppState) => AppState) {
     setState((prev) => fn(prev));
@@ -168,19 +195,19 @@ export default function App() {
   return (
     <div className="app">
       <header className="app__header">
-        <div>
-          <p className="app__eyebrow">Planejador de estudos</p>
-          <h1>Carta de Rota</h1>
-          <p>Marque o destino, estime o caminho e acompanhe quando cada trecho termina.</p>
+        <div className="brand">
+          <Logo size={52} />
+          <div>
+            <p className="app__eyebrow">Planejador de estudos</p>
+            <h1>Carta de Rota</h1>
+            <p>Marque o destino, estime o caminho e acompanhe quando cada trecho termina.</p>
+          </div>
         </div>
-        <ThemeToggle theme={state.theme} onChange={(theme) => patch((s) => ({ ...s, theme }))} />
+        <ThemeToggle theme={state.theme} onChange={changeTheme} />
       </header>
 
       <section className="summary" aria-label="Resumo">
-        <div className="summary__item">
-          <span className="summary__value">{stats.totalRemaining}h</span>
-          <span className="summary__label">restantes</span>
-        </div>
+        <Stat value={stats.totalRemaining} suffix="h" label="restantes" />
         <div className="summary__item">
           <span className="summary__value">
             {stats.lastFinish ? formatDay(stats.lastFinish) : pendingCount > 0 ? "—" : "🎉"}
@@ -189,15 +216,8 @@ export default function App() {
             {pendingCount === 0 ? "rota concluída" : stats.lastFinish ? "conclusão prevista" : "sem horas na semana"}
           </span>
         </div>
-        <div className={`summary__item ${stats.lateCount > 0 ? "summary__item--alert" : "summary__item--ok"}`}>
-          <span className="summary__value">{stats.lateCount}</span>
-          <span className="summary__label">{stats.lateCount === 1 ? "tópico em risco" : "tópicos em risco"}</span>
-        </div>
-        <div className="summary__item">
-          <span className="summary__value">{stats.overall}%</span>
-          <span className="summary__label">da jornada feita</span>
-          <div className="summary__bar" aria-hidden="true"><span style={{ width: `${stats.overall}%` }} /></div>
-        </div>
+        <Stat value={stats.lateCount} tone={stats.lateCount > 0 ? "alert" : "ok"} label={stats.lateCount === 1 ? "tópico em risco" : "tópicos em risco"} />
+        <Stat value={stats.overall} suffix="%" label="da jornada feita" bar={stats.overall} />
       </section>
 
       <main className="app__grid">
@@ -305,6 +325,13 @@ export default function App() {
       <footer className="app__footer">
         Dados salvos só neste navegador. Use o backup para levar a rota para outro aparelho.
       </footer>
+
+      <div className="waves" aria-hidden="true">
+        <svg viewBox="0 0 1440 120" preserveAspectRatio="none">
+          <path className="waves__back" d="M0,64 C240,112 480,16 720,64 C960,112 1200,16 1440,64 L1440,120 L0,120 Z" />
+          <path className="waves__front" d="M0,84 C300,30 600,110 900,72 C1100,46 1300,96 1440,80 L1440,120 L0,120 Z" />
+        </svg>
+      </div>
 
       <Toast message={toast?.message ?? null} action={toast?.action ?? null} />
     </div>
