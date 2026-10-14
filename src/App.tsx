@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
+import InfoDialog, { type InfoTab } from "./components/InfoDialog";
 import Logo from "./components/Logo";
 import Stat from "./components/Stat";
 import ConfirmButton from "./components/ConfirmButton";
@@ -22,7 +23,7 @@ const FILTERS: { value: Filter; label: string }[] = [
   { value: "done", label: "Concluídos" },
 ];
 
-const VERSION = "1.2";
+const VERSION = "1.3";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -43,6 +44,7 @@ export default function App() {
   const [filter, setFilter] = useState<Filter>("all");
   const [toast, setToast] = useState<{ message: string; action?: ToastAction } | null>(null);
   const [newStage, setNewStage] = useState("");
+  const [info, setInfo] = useState<InfoTab | null>(null);
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const today = useMemo(() => startOfDay(new Date()), []);
@@ -377,8 +379,15 @@ export default function App() {
       </main>
 
       <footer className="app__footer">
-        Carta de Rota v{VERSION} · dados salvos só neste navegador. Use o backup para levar a rota para outro aparelho.
+        <p>
+          Carta de Rota v{VERSION} ·{" "}
+          <button type="button" className="link" onClick={() => setInfo("help")}>Ajuda</button> ·{" "}
+          <button type="button" className="link" onClick={() => setInfo("news")}>Novidades</button>
+        </p>
+        <p>Dados salvos só neste navegador.</p>
       </footer>
+
+      <InfoDialog tab={info} onTab={setInfo} onClose={() => setInfo(null)} />
 
       <div className="waves" aria-hidden="true">
         <svg viewBox="0 0 1440 120" preserveAspectRatio="none">
