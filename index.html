@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0a1f2e" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2714%27 fill=%27%230a1f2e%27 stroke=%27%23d4ac5a%27 stroke-width=%272%27/%3E%3Cpath d=%27M16 6l3 10-3 10-3-10z%27 fill=%27%23d4ac5a%27/%3E%3C/svg%3E" />
+    <title>Carta de Rota</title>
+    <script>
+      try {
+        var saved = JSON.parse(localStorage.getItem("carta-de-rota:v3") || "{}").theme || "system";
+        var dark = saved === "dark" || (saved !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.dataset.theme = dark ? "dark" : "light";
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
