@@ -22,6 +22,12 @@ const FILTERS: { value: Filter; label: string }[] = [
   { value: "done", label: "Concluídos" },
 ];
 
+const VERSION = "1.2";
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+}
+
 function applyTheme(mode: ThemeMode) {
   const dark = mode === "dark" || (mode === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
   document.documentElement.dataset.theme = dark ? "dark" : "light";
@@ -37,6 +43,7 @@ export default function App() {
   const [filter, setFilter] = useState<Filter>("all");
   const [toast, setToast] = useState<{ message: string; action?: ToastAction } | null>(null);
   const [newStage, setNewStage] = useState("");
+  const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const today = useMemo(() => startOfDay(new Date()), []);
 
@@ -57,6 +64,21 @@ export default function App() {
     const id = window.setTimeout(() => setToast(null), toast.action ? 6000 : 2600);
     return () => window.clearTimeout(id);
   }, [toast]);
+
+  // Instalação como app (quando o navegador oferece)
+  useEffect(() => {
+    const onPrompt = (e: Event) => {
+      e.preventDefault();
+      setInstallEvent(e as BeforeInstallPromptEvent);
+    };
+    const onInstalled = () => setInstallEvent(null);
+    window.addEventListener("beforeinstallprompt", onPrompt);
+    window.addEventListener("appinstalled", onInstalled);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", onPrompt);
+      window.removeEventListener("appinstalled", onInstalled);
+    };
+  }, []);
 
   // Atalho: "n" leva o foco para o novo tópico
   useEffect(() => {
@@ -194,6 +216,7 @@ export default function App() {
 
   return (
     <div className="app">
+      <a className="skip" href="#rota">Pular para a rota</a>
       <header className="app__header">
         <div className="brand">
           <Logo size={52} />
@@ -203,17 +226,37 @@ export default function App() {
             <p>Marque o destino, estime o caminho e acompanhe quando cada trecho termina.</p>
           </div>
         </div>
-        <ThemeToggle theme={state.theme} onChange={changeTheme} />
+        <div className="app__tools">
+          {installEvent && (
+            <button
+              type="button"
+              className="btn btn--small"
+              onClick={async () => {
+                await installEvent.prompt();
+                setInstallEvent(null);
+              }}
+            >
+              Instalar app
+            </button>
+          )}
+          <ThemeToggle theme={state.theme} onChange={changeTheme} />
+        </div>
       </header>
 
       <section className="summary" aria-label="Resumo">
         <Stat value={stats.totalRemaining} suffix="h" label="restantes" />
         <div className="summary__item">
           <span className="summary__value">
-            {stats.lastFinish ? formatDay(stats.lastFinish) : pendingCount > 0 ? "—" : "🎉"}
+            {isEmpty ? "—" : stats.lastFinish ? formatDay(stats.lastFinish) : pendingCount > 0 ? "—" : "🎉"}
           </span>
           <span className="summary__label">
-            {pendingCount === 0 ? "rota concluída" : stats.lastFinish ? "conclusão prevista" : "sem horas na semana"}
+            {isEmpty
+              ? "adicione um tópico"
+              : pendingCount === 0
+                ? "rota concluída"
+                : stats.lastFinish
+                  ? "conclusão prevista"
+                  : "sem horas na semana"}
           </span>
         </div>
         <Stat value={stats.lateCount} tone={stats.lateCount > 0 ? "alert" : "ok"} label={stats.lateCount === 1 ? "tópico em risco" : "tópicos em risco"} />
@@ -279,7 +322,7 @@ export default function App() {
           </section>
         </aside>
 
-        <section className="route-panel" aria-label="Rota de estudos">
+        <section className="route-panel" id="rota" aria-label="Rota de estudos" tabIndex={-1}>
           {!isEmpty && <Timeline days={days} />}
 
           <div className="route-panel__head">
@@ -294,9 +337,20 @@ export default function App() {
           </div>
 
           {isEmpty ? (
-            <div className="empty">
-              <p className="empty__title">Sua rota está vazia.</p>
-              <p className="hint">Adicione o primeiro tópico no painel ao lado, ou carregue um exemplo para ver como funciona.</p>
+            <div className="empty empty--onboard">
+              <p className="empty__title">Bem-vindo à Carta de Rota.</p>
+              <ol className="steps">
+                <li><strong>Adicione tópicos</strong> com as horas que cada um leva e o prazo.</li>
+                <li><strong>Ajuste sua semana</strong> para dizer em quais dias você consegue estudar.</li>
+                <li><strong>Acompanhe a previsão</strong> e registre as horas conforme avança.</li>
+              </ol>
+              <button
+                type="button"
+                className="btn btn--primary"
+                onClick={() => { setState(sampleState(today)); notify("Exemplo carregado."); }}
+              >
+                Ver um exemplo
+              </button>
             </div>
           ) : visibleCount === 0 ? (
             <div className="empty">
@@ -323,7 +377,7 @@ export default function App() {
       </main>
 
       <footer className="app__footer">
-        Dados salvos só neste navegador. Use o backup para levar a rota para outro aparelho.
+        Carta de Rota v{VERSION} · dados salvos só neste navegador. Use o backup para levar a rota para outro aparelho.
       </footer>
 
       <div className="waves" aria-hidden="true">

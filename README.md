@@ -25,3 +25,9 @@ npm run preview   # testa o build
 ## Dados
 
 Tudo fica no `localStorage` do navegador. Use "Exportar backup" para levar a rota para outro aparelho.
+
+## App instalável
+
+- Abra no navegador e use "Instalar app" (ou o menu do navegador, "Adicionar à tela inicial").
+- Depois da primeira visita, o app abre sem internet (service worker, só no build de produção).
+- Os dados ficam no navegador do aparelho; o backup em JSON faz a ponte entre eles.
