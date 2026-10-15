@@ -9,6 +9,7 @@ interface InfoDialogProps {
 }
 
 const CHANGES = [
+  { version: "1.6", items: ["Timer de foco de 25 minutos por tópico, que registra o tempo ao terminar.", "Sequência de dias seguidos estudando, no cabeçalho.", "Busca e ordenação na rota.", "Confete ao concluir, e uma celebração maior ao terminar a rota.", "Ondas de clique nos botões e barras que crescem na entrada."] },
   { version: "1.5", items: ["Botão Efeitos para ligar e desligar as animações.", "Fundo com linhas de profundidade e bolhas em canvas."] },
   { version: "1.4", items: ["Fundo animado em canvas, inspirado numa carta náutica.", "A rota se desenha sozinha, com um navio percorrendo o trajeto."] },
   { version: "1.3", items: ["Ajuda e novidades no rodapé, com passos e atalhos.", "Janela de novidades com o histórico de versões."] },
@@ -52,7 +53,7 @@ export default function InfoDialog({ tab, onClose, onTab }: InfoDialogProps) {
             <li>Crie <strong>etapas</strong> para agrupar os assuntos, como Fundamentos ou Projeto final.</li>
             <li>Adicione <strong>tópicos</strong> com as horas estimadas e o prazo.</li>
             <li>Marque em <strong>Semana de estudo</strong> quanto tempo você tem em cada dia.</li>
-            <li>Registre as horas feitas. A <strong>previsão</strong> se atualiza sozinha.</li>
+            <li>Registre as horas feitas, ou use o <strong>timer de foco</strong> de 25 minutos. A <strong>previsão</strong> se atualiza sozinha.</li>
           </ol>
           <h3>Atalhos</h3>
           <ul className="info__list">

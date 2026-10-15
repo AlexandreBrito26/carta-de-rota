@@ -4,6 +4,7 @@ import InfoDialog, { type InfoTab } from "./components/InfoDialog";
 import Logo from "./components/Logo";
 import Stat from "./components/Stat";
 import ChartBackground from "./components/ChartBackground";
+import Confetti, { celebrate } from "./components/Confetti";
 import ConfirmButton from "./components/ConfirmButton";
 import StageSection from "./components/StageSection";
 import ThemeToggle from "./components/ThemeToggle";
@@ -13,8 +14,8 @@ import TopicForm, { type TopicInput } from "./components/TopicForm";
 import WeekEditor from "./components/WeekEditor";
 import { emptyState, loadState, newId, parseState, sampleState, saveState } from "./logic/storage";
 import {
-  addDays, computeStats, dailyPlan, formatDay, matchesFilter, schedule, startOfDay, toInputDay,
-  type AppState, type Filter, type ThemeMode, type Topic,
+  addDays, computeStats, computeStreak, dailyPlan, formatDay, matchesFilter, schedule, sortItems, startOfDay, toInputDay,
+  type AppState, type Filter, type SortKey, type ThemeMode, type Topic,
 } from "./logic/plan";
 
 const FILTERS: { value: Filter; label: string }[] = [
@@ -24,7 +25,7 @@ const FILTERS: { value: Filter; label: string }[] = [
   { value: "done", label: "Concluídos" },
 ];
 
-const VERSION = "1.5";
+const VERSION = "1.6";
 const EFFECTS_KEY = "carta-de-rota:efeitos";
 
 // Efeitos ligados por padrão, desligados se o sistema pedir para reduzir movimento
@@ -55,6 +56,8 @@ function isTyping(target: EventTarget | null): boolean {
 export default function App() {
   const [state, setState] = useState<AppState>(loadState);
   const [filter, setFilter] = useState<Filter>("all");
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<SortKey>("deadline");
   const [toast, setToast] = useState<{ message: string; action?: ToastAction } | null>(null);
   const [newStage, setNewStage] = useState("");
   const [info, setInfo] = useState<InfoTab | null>(null);
@@ -132,6 +135,26 @@ export default function App() {
     doc.startViewTransition(() => flushSync(() => patch((s) => ({ ...s, theme }))));
   }
 
+  // Ondas de clique nos botões
+  useEffect(() => {
+    function onDown(e: PointerEvent) {
+      if (document.documentElement.dataset.effects === "off") return;
+      const el = (e.target as HTMLElement | null)?.closest?.(".btn, .chip, .theme-toggle, .effects-toggle") as HTMLElement | null;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const size = Math.max(r.width, r.height) * 2;
+      const wave = document.createElement("span");
+      wave.className = "ripple";
+      wave.style.width = wave.style.height = `${size}px`;
+      wave.style.left = `${e.clientX - r.left - size / 2}px`;
+      wave.style.top = `${e.clientY - r.top - size / 2}px`;
+      el.appendChild(wave);
+      window.setTimeout(() => wave.remove(), 650);
+    }
+    document.addEventListener("pointerdown", onDown);
+    return () => document.removeEventListener("pointerdown", onDown);
+  }, []);
+
   // Brilho que segue o cursor dentro dos painéis
   useEffect(() => {
     function onMove(e: PointerEvent) {
@@ -158,14 +181,35 @@ export default function App() {
     patch((s) => ({ ...s, topics: s.topics.map((t) => (t.id === id ? change(t) : t)) }));
   }
 
+  // Soma horas ao dia de hoje no histórico (base da sequência)
+  function addHistory(hours: number) {
+    const key = toInputDay(today);
+    patch((s) => ({ ...s, history: { ...s.history, [key]: (s.history[key] ?? 0) + hours } }));
+  }
+
+  const streak = useMemo(() => computeStreak(state.history, today), [state.history, today]);
+
   const actions = {
     log: (id: string, hours: number) => {
+      const topic = state.topics.find((t) => t.id === id);
+      const added = topic ? Math.min(hours, Math.max(0, topic.estimatedHours - topic.doneHours)) : hours;
       updateTopic(id, (t) => ({ ...t, doneHours: Math.min(t.estimatedHours, t.doneHours + hours) }));
-      notify(`${hours}h registradas.`);
+      if (added > 0) addHistory(added);
+      notify(`${Math.round(hours * 100) / 100}h registradas.`);
     },
     complete: (id: string) => {
+      const topic = state.topics.find((t) => t.id === id);
+      const left = topic ? Math.max(0, topic.estimatedHours - topic.doneHours) : 0;
+      const routeDone = state.topics.every((t) => t.id === id || t.doneHours >= t.estimatedHours);
       updateTopic(id, (t) => ({ ...t, doneHours: t.estimatedHours }));
-      notify("Tópico concluído. Bom trabalho!");
+      if (left > 0) addHistory(left);
+      if (routeDone && state.topics.length > 0) {
+        celebrate({ power: 180 });
+        notify("Rota concluída. Parabéns!");
+      } else {
+        celebrate({ power: 70 });
+        notify("Tópico concluído. Bom trabalho!");
+      }
     },
     reopen: (id: string) => {
       updateTopic(id, (t) => ({ ...t, doneHours: 0 }));
@@ -236,7 +280,15 @@ export default function App() {
 
   const visibleStages = state.stages.map((stage) => ({
     stage,
-    items: plan.filter((p) => p.topic.stageId === stage.id && matchesFilter(p, filter)),
+    items: sortItems(
+      plan.filter(
+        (p) =>
+          p.topic.stageId === stage.id &&
+          matchesFilter(p, filter) &&
+          p.topic.name.toLowerCase().includes(query.trim().toLowerCase()),
+      ),
+      sort,
+    ),
   }));
   const visibleCount = visibleStages.reduce((sum, v) => sum + v.items.length, 0);
   const pendingCount = plan.filter((p) => p.status !== "done").length;
@@ -244,6 +296,7 @@ export default function App() {
   return (
     <div className="app">
       <ChartBackground enabled={effects} />
+      <Confetti />
       <a className="skip" href="#rota">Pular para a rota</a>
       <header className="app__header">
         <div className="brand">
@@ -252,6 +305,11 @@ export default function App() {
             <p className="app__eyebrow">Planejador de estudos</p>
             <h1>Carta de Rota</h1>
             <p>Marque o destino, estime o caminho e acompanhe quando cada trecho termina.</p>
+          <p className={`streak ${streak > 0 ? "streak--on" : ""}`}>
+            {streak > 0
+              ? <><span aria-hidden="true">🔥</span> {streak} {streak === 1 ? "dia seguido" : "dias seguidos"} estudando</>
+              : "Registre horas hoje para começar uma sequência."}
+          </p>
           </div>
         </div>
         <div className="app__tools">
@@ -372,6 +430,29 @@ export default function App() {
               ))}
             </div>
           </div>
+
+          {!isEmpty && (
+            <div className="toolbar">
+              <input
+                type="search"
+                className="toolbar__search"
+                placeholder="Buscar tópico"
+                aria-label="Buscar tópico"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+              <select
+                className="toolbar__sort"
+                aria-label="Ordenar tópicos"
+                value={sort}
+                onChange={(e) => setSort(e.target.value as SortKey)}
+              >
+                <option value="deadline">Ordenar por prazo</option>
+                <option value="progress">Ordenar por progresso</option>
+                <option value="remaining">Ordenar por horas restantes</option>
+              </select>
+            </div>
+          )}
 
           {isEmpty ? (
             <div className="empty empty--onboard">

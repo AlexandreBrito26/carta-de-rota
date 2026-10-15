@@ -20,6 +20,7 @@ export function sampleState(today: Date): AppState {
     ],
     weekHours: [...DEFAULT_WEEK] as WeekHours,
     theme: "system",
+    history: {},
   };
 }
 
@@ -29,6 +30,7 @@ export function emptyState(): AppState {
     topics: [],
     weekHours: [...DEFAULT_WEEK] as WeekHours,
     theme: "system",
+    history: {},
   };
 }
 
@@ -61,7 +63,13 @@ export function parseState(text: string): AppState | null {
         ? (week as WeekHours)
         : [...DEFAULT_WEEK] as WeekHours;
     const theme = THEMES.includes(data.theme as ThemeMode) ? (data.theme as ThemeMode) : "system";
-    return { stages: data.stages, topics: data.topics, weekHours, theme };
+    const history: Record<string, number> = {};
+    if (data.history && typeof data.history === "object") {
+      for (const [k, v] of Object.entries(data.history)) {
+        if (/^\d{4}-\d{2}-\d{2}$/.test(k) && typeof v === "number" && v >= 0) history[k] = v;
+      }
+    }
+    return { stages: data.stages, topics: data.topics, weekHours, theme, history };
   } catch {
     return null;
   }

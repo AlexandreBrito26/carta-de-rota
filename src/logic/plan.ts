@@ -24,7 +24,10 @@ export interface AppState {
   topics: Topic[];
   weekHours: WeekHours;
   theme: ThemeMode;
+  history: Record<string, number>; // "YYYY-MM-DD" -> horas registradas naquele dia
 }
+
+export type SortKey = "deadline" | "progress" | "remaining";
 
 export const WEEKDAY_LABELS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"] as const;
 export const DEFAULT_WEEK: WeekHours = [0, 2, 2, 2, 2, 2, 0];
@@ -191,3 +194,28 @@ export const STATUS_TONE: Record<Status, "done" | "ok" | "alert"> = {
   late: "alert",
   overdue: "alert",
 };
+
+
+// Sequência de dias seguidos com horas registradas.
+// Se hoje ainda não tem registro, a contagem começa de ontem.
+export function computeStreak(history: Record<string, number>, today: Date): number {
+  let day = startOfDay(today);
+  if (!(history[toInputDay(day)] > 0)) day = addDays(day, -1);
+  let count = 0;
+  while (count < 3650 && history[toInputDay(day)] > 0) {
+    count += 1;
+    day = addDays(day, -1);
+  }
+  return count;
+}
+
+export function sortItems(items: ScheduledTopic[], key: SortKey): ScheduledTopic[] {
+  const copy = [...items];
+  if (key === "progress") {
+    return copy.sort((a, b) => topicProgress(b.topic) - topicProgress(a.topic));
+  }
+  if (key === "remaining") {
+    return copy.sort((a, b) => b.remaining - a.remaining);
+  }
+  return copy; // já vem na ordem do prazo
+}

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { formatDay, parseDay, STATUS_LABEL, STATUS_TONE, topicProgress, type Stage, type ScheduledTopic } from "../logic/plan";
 import ConfirmButton from "./ConfirmButton";
+import FocusTimer from "./FocusTimer";
 import TopicForm, { type TopicInput } from "./TopicForm";
 
 export interface TopicActions {
@@ -86,6 +87,7 @@ export default function TopicCard({ item, stages, actions }: TopicCardProps) {
         </div>
       ) : (
         <div className="card__log">
+          <FocusTimer topicName={topic.name} onFinish={(hours) => actions.log(topic.id, hours)} />
           <input
             inputMode="decimal"
             placeholder={`Horas feitas (faltam ${remaining}h)`}
