@@ -27,7 +27,7 @@ const FILTERS: { value: Filter; label: string }[] = [
   { value: "done", label: "Concluídos" },
 ];
 
-const VERSION = "1.8";
+const VERSION = "1.9";
 const EFFECTS_KEY = "carta-de-rota:efeitos";
 
 // Efeitos ligados por padrão, desligados se o sistema pedir para reduzir movimento

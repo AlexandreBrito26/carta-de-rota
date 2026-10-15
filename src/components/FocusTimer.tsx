@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { celebrate } from "./Confetti";
 import { askNotifyPermission, notifyDone, playChime } from "../logic/alerts";
 
@@ -15,6 +16,7 @@ export default function FocusTimer({ topicName, onFinish }: FocusTimerProps) {
   const [open, setOpen] = useState(false);
   const [running, setRunning] = useState(false);
   const [left, setLeft] = useState(SESSION);
+  const [full, setFull] = useState(false);
   const endAt = useRef(0);
   const finish = useRef(onFinish);
   finish.current = onFinish;
@@ -47,8 +49,17 @@ export default function FocusTimer({ topicName, onFinish }: FocusTimerProps) {
   function stop() {
     setRunning(false);
     setOpen(false);
+    setFull(false);
     setLeft(SESSION);
   }
+
+  // Esc sai do modo tela cheia
+  useEffect(() => {
+    if (!full) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setFull(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [full]);
 
   if (!open) {
     return (
@@ -62,8 +73,13 @@ export default function FocusTimer({ topicName, onFinish }: FocusTimerProps) {
   const ss = String(left % 60).padStart(2, "0");
   const offset = RING * (1 - left / SESSION);
 
-  return (
-    <div className="focus" role="group" aria-label={`Sessão de foco em ${topicName}`}>
+  const panel = (
+    <div
+      className={`focus ${full ? "focus--full" : ""}`}
+      role="group"
+      aria-label={`Sessão de foco em ${topicName}`}
+    >
+      {full && <p className="focus__topic">{topicName}</p>}
       <svg className="focus__ring" viewBox="0 0 60 60" aria-hidden="true">
         <circle cx="30" cy="30" r="26" className="focus__track" />
         <circle
@@ -84,8 +100,14 @@ export default function FocusTimer({ topicName, onFinish }: FocusTimerProps) {
             {left === SESSION ? "Começar" : "Continuar"}
           </button>
         )}
+        <button type="button" className="btn btn--small" onClick={() => setFull((f) => !f)}>
+          {full ? "Sair da tela cheia" : "Tela cheia"}
+        </button>
         <button type="button" className="btn btn--small" onClick={stop}>Parar</button>
       </div>
     </div>
   );
+
+  // Tela cheia sai do cartão via portal, para não herdar transforms do cartão
+  return full ? createPortal(panel, document.body) : panel;
 }

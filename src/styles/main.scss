@@ -1766,3 +1766,43 @@ h1 {
     }
   }
 }
+
+// ——— Modo foco em tela cheia ———
+.focus--full {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  flex-direction: column;
+  justify-content: center;
+  gap: 24px;
+  padding: 24px;
+  border-radius: 0;
+  background: var(--bg);
+  box-shadow: none;
+
+  .focus__ring {
+    width: min(70vw, 360px);
+    height: min(70vw, 360px);
+  }
+
+  .focus__track,
+  .focus__progress {
+    stroke-width: 3;
+  }
+
+  .focus__time {
+    font-size: clamp(3rem, 12vw, 6rem);
+    min-width: 0;
+  }
+
+  .focus__topic {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--ink-soft);
+  }
+
+  .focus__actions {
+    margin-left: 0;
+    justify-content: center;
+  }
+}
