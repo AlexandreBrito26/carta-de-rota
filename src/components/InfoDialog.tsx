@@ -9,6 +9,7 @@ interface InfoDialogProps {
 }
 
 const CHANGES = [
+  { version: "1.8", items: ["Exportar o histórico de horas em CSV, para abrir em planilha."] },
   { version: "1.7", items: ["Aviso sonoro e notificação ao terminar o timer de foco.", "Meta semanal de horas, com barra de progresso.", "Histórico dos últimos 14 dias em gráfico.", "Correção do espaço vazio na coluna lateral."] },
   { version: "1.6", items: ["Timer de foco de 25 minutos por tópico, que registra o tempo ao terminar.", "Sequência de dias seguidos estudando, no cabeçalho.", "Busca e ordenação na rota.", "Confete ao concluir, e uma celebração maior ao terminar a rota.", "Ondas de clique nos botões e barras que crescem na entrada."] },
   { version: "1.5", items: ["Botão Efeitos para ligar e desligar as animações.", "Fundo com linhas de profundidade e bolhas em canvas."] },

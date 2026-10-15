@@ -27,7 +27,7 @@ const FILTERS: { value: Filter; label: string }[] = [
   { value: "done", label: "Concluídos" },
 ];
 
-const VERSION = "1.7";
+const VERSION = "1.8";
 const EFFECTS_KEY = "carta-de-rota:efeitos";
 
 // Efeitos ligados por padrão, desligados se o sistema pedir para reduzir movimento
@@ -275,6 +275,24 @@ export default function App() {
     notify("Backup exportado.");
   }
 
+  // Histórico em CSV, para abrir em planilha
+  function exportHistoryCsv() {
+    const rows = Object.entries(state.history)
+      .filter(([, h]) => h > 0)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([day, h]) => `${day},${String(Math.round(h * 100) / 100).replace(".", ",")}`);
+    if (rows.length === 0) return notify("Ainda não há horas registradas para exportar.");
+    const csv = ["data,horas", ...rows].join("\n");
+    const blob = new Blob([`\ufeff${csv}`], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `carta-de-rota-historico-${toInputDay(today)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    notify("Histórico exportado em CSV.");
+  }
+
   async function importBackup(file: File) {
     const parsed = parseState(await file.text());
     if (!parsed) return notify("Arquivo inválido. Use um backup exportado por este app.");
@@ -399,6 +417,7 @@ export default function App() {
             <div className="data-tools">
               <button type="button" className="btn btn--small" onClick={exportBackup}>Exportar backup</button>
               <button type="button" className="btn btn--small" onClick={() => fileRef.current?.click()}>Importar backup</button>
+              <button type="button" className="btn btn--small" onClick={exportHistoryCsv}>Histórico (CSV)</button>
               <input
                 ref={fileRef}
                 type="file"
