@@ -6,7 +6,9 @@ export function useCountUp(target: number, duration = 700): number {
   const current = useRef(target);
 
   useEffect(() => {
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduce =
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+      document.documentElement.dataset.effects === "off";
     if (reduce || current.current === target) {
       current.current = target;
       setValue(target);

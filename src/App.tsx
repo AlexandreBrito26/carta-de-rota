@@ -24,7 +24,19 @@ const FILTERS: { value: Filter; label: string }[] = [
   { value: "done", label: "Concluídos" },
 ];
 
-const VERSION = "1.4";
+const VERSION = "1.5";
+const EFFECTS_KEY = "carta-de-rota:efeitos";
+
+// Efeitos ligados por padrão, desligados se o sistema pedir para reduzir movimento
+function initialEffects(): boolean {
+  try {
+    const saved = localStorage.getItem(EFFECTS_KEY);
+    if (saved !== null) return saved === "on";
+  } catch {
+    // sem armazenamento: usa o padrão
+  }
+  return !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -46,6 +58,7 @@ export default function App() {
   const [toast, setToast] = useState<{ message: string; action?: ToastAction } | null>(null);
   const [newStage, setNewStage] = useState("");
   const [info, setInfo] = useState<InfoTab | null>(null);
+  const [effects, setEffects] = useState<boolean>(initialEffects);
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const today = useMemo(() => startOfDay(new Date()), []);
@@ -98,6 +111,16 @@ export default function App() {
   const days = useMemo(() => dailyPlan(state.topics, state.weekHours, today, 14), [state.topics, state.weekHours, today]);
   const isEmpty = state.topics.length === 0;
 
+  // Efeitos: liga ou desliga animações e o fundo em canvas
+  useEffect(() => {
+    document.documentElement.dataset.effects = effects ? "on" : "off";
+    try {
+      localStorage.setItem(EFFECTS_KEY, effects ? "on" : "off");
+    } catch {
+      // sem armazenamento: vale só nesta sessão
+    }
+  }, [effects]);
+
   // Troca de tema com transição circular, quando o navegador suporta
   function changeTheme(theme: ThemeMode) {
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -112,6 +135,7 @@ export default function App() {
   // Brilho que segue o cursor dentro dos painéis
   useEffect(() => {
     function onMove(e: PointerEvent) {
+      if (document.documentElement.dataset.effects === "off") return;
       const panel = (e.target as HTMLElement | null)?.closest?.(".panel, .summary__item") as HTMLElement | null;
       if (!panel) return;
       const r = panel.getBoundingClientRect();
@@ -219,7 +243,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <ChartBackground />
+      <ChartBackground enabled={effects} />
       <a className="skip" href="#rota">Pular para a rota</a>
       <header className="app__header">
         <div className="brand">
@@ -243,6 +267,15 @@ export default function App() {
               Instalar app
             </button>
           )}
+          <button
+            type="button"
+            className="btn btn--small effects-toggle"
+            aria-pressed={effects}
+            onClick={() => setEffects((on) => !on)}
+            title="Liga ou desliga as animações"
+          >
+            <span aria-hidden="true">✦</span> Efeitos {effects ? "ligados" : "desligados"}
+          </button>
           <ThemeToggle theme={state.theme} onChange={changeTheme} />
         </div>
       </header>

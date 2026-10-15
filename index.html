@@ -16,6 +16,9 @@
         var saved = JSON.parse(localStorage.getItem("carta-de-rota:v3") || "{}").theme || "system";
         var dark = saved === "dark" || (saved !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
         document.documentElement.dataset.theme = dark ? "dark" : "light";
+        var fx = localStorage.getItem("carta-de-rota:efeitos");
+        document.documentElement.dataset.effects =
+          fx === "off" || (fx === null && matchMedia("(prefers-reduced-motion: reduce)").matches) ? "off" : "on";
       } catch (e) {}
     </script>
   </head>

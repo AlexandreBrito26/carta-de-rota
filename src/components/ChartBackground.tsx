@@ -53,7 +53,11 @@ function soundings(count: number) {
   }));
 }
 
-export default function ChartBackground() {
+interface ChartBackgroundProps {
+  enabled: boolean;
+}
+
+export default function ChartBackground({ enabled }: ChartBackgroundProps) {
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -63,6 +67,10 @@ export default function ChartBackground() {
     if (!ctx) return;
 
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!enabled) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      return;
+    }
     const path = sampleRoute();
     const marks = soundings(38);
     let palette = readPalette();
@@ -97,9 +105,58 @@ export default function ChartBackground() {
       ctx!.restore();
     }
 
+    // Bolhas: sobem devagar e recomeçam por baixo
+    const bubbles = Array.from({ length: 22 }, (_, i) => ({
+      x: ((i * 0.6180339) % 1),
+      speed: 0.6 + ((i * 0.37) % 1),
+      r: 1.5 + ((i * 0.53) % 2.5),
+    }));
+
+    // Linhas de profundidade (isóbatas) que ondulam, como contornos vivos
+    function depthLines(time: number) {
+      const c = ctx!;
+      c.save();
+      c.strokeStyle = palette.sea;
+      c.lineWidth = 1;
+      for (let k = 0; k < 9; k++) {
+        const base = (k + 1) / 10;
+        c.globalAlpha = 0.07 + 0.02 * (k % 3);
+        c.beginPath();
+        for (let x = 0; x <= width + 12; x += 12) {
+          const nx = x / width;
+          const y =
+            base * height +
+            Math.sin(nx * 6.2 + time * 0.00035 + k) * 18 +
+            Math.sin(nx * 13 - time * 0.00022 + k * 1.7) * 7;
+          if (x === 0) c.moveTo(x, y);
+          else c.lineTo(x, y);
+        }
+        c.stroke();
+      }
+      c.restore();
+    }
+
+    function bubbleField(time: number) {
+      const c = ctx!;
+      c.save();
+      c.fillStyle = palette.sea;
+      for (const b of bubbles) {
+        const progress = (b.x * 0.9 + (time * 0.00003 * b.speed)) % 1;
+        const y = height * (1 - progress);
+        const x = b.x * width + Math.sin(progress * 8 + b.speed * 3) * 14;
+        c.globalAlpha = 0.12 * (1 - progress);
+        c.beginPath();
+        c.arc(x, y, b.r, 0, Math.PI * 2);
+        c.fill();
+      }
+      c.restore();
+    }
+
     function draw(time: number) {
       const c = ctx!;
       c.clearRect(0, 0, width, height);
+      depthLines(time);
+      bubbleField(time);
 
       // Grade de meridianos e paralelos
       c.save();
@@ -229,7 +286,7 @@ export default function ChartBackground() {
       window.removeEventListener("resize", resize);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, []);
+  }, [enabled]);
 
-  return <canvas ref={ref} className="chart-bg" aria-hidden="true" />;
+  return <canvas ref={ref} className="chart-bg" aria-hidden="true" data-enabled={enabled} />;
 }
