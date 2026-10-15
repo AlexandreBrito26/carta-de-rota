@@ -9,6 +9,7 @@ interface InfoDialogProps {
 }
 
 const CHANGES = [
+  { version: "1.10", items: ["Resumo das últimas 4 semanas, com a meta como referência."] },
   { version: "1.9", items: ["Modo tela cheia para o timer de foco, saindo com Esc.", "Revisão de acessibilidade: nomes e rótulos em todos os controles."] },
   { version: "1.8", items: ["Exportar o histórico de horas em CSV, para abrir em planilha."] },
   { version: "1.7", items: ["Aviso sonoro e notificação ao terminar o timer de foco.", "Meta semanal de horas, com barra de progresso.", "Histórico dos últimos 14 dias em gráfico.", "Correção do espaço vazio na coluna lateral."] },

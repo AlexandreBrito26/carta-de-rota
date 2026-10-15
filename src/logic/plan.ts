@@ -241,3 +241,15 @@ export function lastDays(history: Record<string, number>, today: Date, n: number
     return { date, hours: history[toInputDay(date)] ?? 0 };
   });
 }
+
+// Totais das últimas n semanas (segunda a domingo), da mais antiga para a atual
+export function weeklyTotals(history: Record<string, number>, today: Date, n: number) {
+  const base = startOfDay(today);
+  const mondayThisWeek = addDays(base, -((base.getDay() + 6) % 7));
+  return Array.from({ length: n }, (_, w) => {
+    const start = addDays(mondayThisWeek, (w - (n - 1)) * 7);
+    let hours = 0;
+    for (let d = 0; d < 7; d++) hours += history[toInputDay(addDays(start, d))] ?? 0;
+    return { start, hours: Math.round(hours * 100) / 100 };
+  });
+}

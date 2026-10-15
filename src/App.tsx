@@ -14,9 +14,10 @@ import TopicForm, { type TopicInput } from "./components/TopicForm";
 import WeekEditor from "./components/WeekEditor";
 import WeekGoal from "./components/WeekGoal";
 import HistoryChart from "./components/HistoryChart";
+import WeeklyChart from "./components/WeeklyChart";
 import { emptyState, loadState, newId, parseState, sampleState, saveState } from "./logic/storage";
 import {
-  addDays, computeStats, computeStreak, dailyPlan, formatDay, lastDays, matchesFilter, schedule, sortItems, startOfDay, toInputDay, weekTotal,
+  addDays, computeStats, computeStreak, dailyPlan, formatDay, lastDays, matchesFilter, schedule, sortItems, startOfDay, toInputDay, weekTotal, weeklyTotals,
   type AppState, type Filter, type SortKey, type ThemeMode, type Topic,
 } from "./logic/plan";
 
@@ -27,7 +28,7 @@ const FILTERS: { value: Filter; label: string }[] = [
   { value: "done", label: "Concluídos" },
 ];
 
-const VERSION = "1.9";
+const VERSION = "1.10";
 const EFFECTS_KEY = "carta-de-rota:efeitos";
 
 // Efeitos ligados por padrão, desligados se o sistema pedir para reduzir movimento
@@ -192,6 +193,7 @@ export default function App() {
   const streak = useMemo(() => computeStreak(state.history, today), [state.history, today]);
   const thisWeek = useMemo(() => weekTotal(state.history, today), [state.history, today]);
   const recent = useMemo(() => lastDays(state.history, today, 14), [state.history, today]);
+  const weeks = useMemo(() => weeklyTotals(state.history, today, 4), [state.history, today]);
 
   const actions = {
     log: (id: string, hours: number) => {
@@ -448,6 +450,7 @@ export default function App() {
         <section className="route-panel" id="rota" aria-label="Rota de estudos" tabIndex={-1}>
           {!isEmpty && <Timeline days={days} />}
           {!isEmpty && <HistoryChart days={recent} />}
+          {!isEmpty && <WeeklyChart weeks={weeks} goal={state.weeklyGoal} />}
 
           <div className="route-panel__head">
             <h2>Rota</h2>

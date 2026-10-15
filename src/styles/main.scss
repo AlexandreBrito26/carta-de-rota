@@ -1806,3 +1806,7 @@ h1 {
     justify-content: center;
   }
 }
+
+.weekly .timeline__day.is-met .timeline__fill {
+  background: linear-gradient(180deg, var(--ok), var(--sea));
+}
