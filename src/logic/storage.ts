@@ -21,6 +21,7 @@ export function sampleState(today: Date): AppState {
     weekHours: [...DEFAULT_WEEK] as WeekHours,
     theme: "system",
     history: {},
+    weeklyGoal: 0,
   };
 }
 
@@ -31,6 +32,7 @@ export function emptyState(): AppState {
     weekHours: [...DEFAULT_WEEK] as WeekHours,
     theme: "system",
     history: {},
+    weeklyGoal: 0,
   };
 }
 
@@ -69,7 +71,8 @@ export function parseState(text: string): AppState | null {
         if (/^\d{4}-\d{2}-\d{2}$/.test(k) && typeof v === "number" && v >= 0) history[k] = v;
       }
     }
-    return { stages: data.stages, topics: data.topics, weekHours, theme, history };
+    const goal = typeof data.weeklyGoal === "number" && data.weeklyGoal >= 0 && data.weeklyGoal <= 168 ? data.weeklyGoal : 0;
+    return { stages: data.stages, topics: data.topics, weekHours, theme, history, weeklyGoal: goal };
   } catch {
     return null;
   }

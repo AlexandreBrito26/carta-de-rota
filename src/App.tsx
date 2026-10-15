@@ -12,9 +12,11 @@ import Timeline from "./components/Timeline";
 import Toast, { type ToastAction } from "./components/Toast";
 import TopicForm, { type TopicInput } from "./components/TopicForm";
 import WeekEditor from "./components/WeekEditor";
+import WeekGoal from "./components/WeekGoal";
+import HistoryChart from "./components/HistoryChart";
 import { emptyState, loadState, newId, parseState, sampleState, saveState } from "./logic/storage";
 import {
-  addDays, computeStats, computeStreak, dailyPlan, formatDay, matchesFilter, schedule, sortItems, startOfDay, toInputDay,
+  addDays, computeStats, computeStreak, dailyPlan, formatDay, lastDays, matchesFilter, schedule, sortItems, startOfDay, toInputDay, weekTotal,
   type AppState, type Filter, type SortKey, type ThemeMode, type Topic,
 } from "./logic/plan";
 
@@ -25,7 +27,7 @@ const FILTERS: { value: Filter; label: string }[] = [
   { value: "done", label: "Concluídos" },
 ];
 
-const VERSION = "1.6";
+const VERSION = "1.7";
 const EFFECTS_KEY = "carta-de-rota:efeitos";
 
 // Efeitos ligados por padrão, desligados se o sistema pedir para reduzir movimento
@@ -188,6 +190,8 @@ export default function App() {
   }
 
   const streak = useMemo(() => computeStreak(state.history, today), [state.history, today]);
+  const thisWeek = useMemo(() => weekTotal(state.history, today), [state.history, today]);
+  const recent = useMemo(() => lastDays(state.history, today, 14), [state.history, today]);
 
   const actions = {
     log: (id: string, hours: number) => {
@@ -374,6 +378,11 @@ export default function App() {
           <section className="panel">
             <h2>Semana de estudo</h2>
             <WeekEditor value={state.weekHours} onChange={(weekHours) => patch((s) => ({ ...s, weekHours }))} />
+            <WeekGoal
+              goal={state.weeklyGoal}
+              done={thisWeek}
+              onChange={(weeklyGoal) => patch((s) => ({ ...s, weeklyGoal }))}
+            />
             <p className="hint">A previsão pula os dias sem horas, então fins de semana livres não atrasam a rota.</p>
           </section>
 
@@ -419,6 +428,7 @@ export default function App() {
 
         <section className="route-panel" id="rota" aria-label="Rota de estudos" tabIndex={-1}>
           {!isEmpty && <Timeline days={days} />}
+          {!isEmpty && <HistoryChart days={recent} />}
 
           <div className="route-panel__head">
             <h2>Rota</h2>

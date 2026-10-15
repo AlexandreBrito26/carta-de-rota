@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { celebrate } from "./Confetti";
+import { askNotifyPermission, notifyDone, playChime } from "../logic/alerts";
 
 const SESSION = 25 * 60;
 const RING = 2 * Math.PI * 26;
@@ -30,12 +31,15 @@ export default function FocusTimer({ topicName, onFinish }: FocusTimerProps) {
         setLeft(SESSION);
         finish.current(SESSION / 3600);
         celebrate({ power: 40 });
+        playChime();
+        notifyDone("Foco concluído", `25 minutos em ${topicName}. Horas registradas.`);
       }
     }, 250);
     return () => window.clearInterval(id);
-  }, [running]);
+  }, [running, topicName]);
 
   function start() {
+    askNotifyPermission();
     endAt.current = Date.now() + left * 1000;
     setRunning(true);
   }

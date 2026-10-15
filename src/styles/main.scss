@@ -263,12 +263,8 @@ select {
 .side {
   display: grid;
   gap: $gutter;
+  align-content: start;
   position: relative;
-
-  @media (min-width: 920px) {
-    position: sticky;
-    top: 16px;
-  }
 }
 
 .panel {
@@ -1746,4 +1742,27 @@ h1 {
 
 [data-effects="off"] .streak--on span {
   animation: none !important;
+}
+
+// ——— Meta semanal ———
+.goal {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+
+  &__bar {
+    height: 8px;
+    border-radius: 999px;
+    background: var(--sea-soft);
+    overflow: hidden;
+    box-shadow: inset 2px 2px 4px var(--nm-dark);
+
+    span {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, var(--sea), var(--brass));
+      border-radius: inherit;
+      transition: width 0.5s $ease;
+    }
+  }
 }

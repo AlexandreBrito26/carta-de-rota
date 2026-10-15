@@ -25,6 +25,7 @@ export interface AppState {
   weekHours: WeekHours;
   theme: ThemeMode;
   history: Record<string, number>; // "YYYY-MM-DD" -> horas registradas naquele dia
+  weeklyGoal: number; // horas por semana; 0 = sem meta
 }
 
 export type SortKey = "deadline" | "progress" | "remaining";
@@ -218,4 +219,25 @@ export function sortItems(items: ScheduledTopic[], key: SortKey): ScheduledTopic
     return copy.sort((a, b) => b.remaining - a.remaining);
   }
   return copy; // já vem na ordem do prazo
+}
+
+
+// Horas registradas desde a segunda-feira da semana atual até hoje
+export function weekTotal(history: Record<string, number>, today: Date): number {
+  const base = startOfDay(today);
+  const sinceMonday = (base.getDay() + 6) % 7;
+  let total = 0;
+  for (let i = 0; i <= sinceMonday; i++) {
+    total += history[toInputDay(addDays(base, -i))] ?? 0;
+  }
+  return Math.round(total * 100) / 100;
+}
+
+// Últimos n dias, do mais antigo ao mais recente
+export function lastDays(history: Record<string, number>, today: Date, n: number) {
+  const base = startOfDay(today);
+  return Array.from({ length: n }, (_, i) => {
+    const date = addDays(base, i - (n - 1));
+    return { date, hours: history[toInputDay(date)] ?? 0 };
+  });
 }
